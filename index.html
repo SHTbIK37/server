@@ -4,21 +4,27 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./styles/index.css" />
+    <link rel="stylesheet" href="/styles/index.css" />
     <title>LAB 1</title>
   </head>
   <body>
-    <button class="button about" id="createdBy">О программе</button>
-    <form method="post">
-      <input type="text" name="name" placeholder="Login" /><br /><br />
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-      /><br /><br />
-      <input type="submit" value="Войти" />
-    </form>
-    <button class="button reg">Регистрация</button>
-    <script src="./scripts/script.js"></script>
+    <div class="wrapper">
+      <button class="button about" id="createdBy">О программе</button>
+      <form id="form">
+        <input type="text" name="name" placeholder="Login" /><br /><br />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+        /><br /><br />
+        <button id="submit" type="submit">Войти</button>
+      </form>
+      <button id="reg" class="button reg">Регистрация</button>
+      <br />
+      <button id="kill" class="button" style="margin-top: 10px">
+        Завершить работу
+      </button>
+    </div>
+    <script src="/scripts/script.js"></script>
   </body>
 </html>
