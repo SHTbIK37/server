@@ -460,4 +460,4 @@ app.post("/login", jsonParser, (req, res) => {
   });
 });
 const port = 5000;
-app.listen(port, () => console.log(`${port}!`));
+app.listen(process.env.PORT || port, () => console.log(`${port}!`));
