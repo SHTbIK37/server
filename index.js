@@ -1,3 +1,22 @@
+let wrong = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    
+  </head>
+  <body>
+    <form>
+      <input type="password" name="old" placeholder="Старый" />
+      <input type="password" name="new" placeholder="Новый" />
+      <input type="password" name="copyn" placeholder="Повтор" />
+      <button type="submit">Подтвердить</button>
+    </form>
+    
+  </body>
+</html>`;
 let secretWord = "ivan";
 let usersKey = "";
 const process = require("process");
@@ -11,12 +30,14 @@ const { checkPassword } = require("./src/utils/validations.js");
 // ======================================================
 const crypto = require("crypto");
 const { exit, off } = require("process");
-
 let enterSecret = 0;
+
 fs.stat("db.txt", (err, data) => {
   if (err) {
     createCryptoFile(secretWord);
-  } else console.log("yes");
+  } else {
+    console.log("yes");
+  }
 });
 async function createCryptoFile(secretWord) {
   let code = `{
@@ -44,7 +65,7 @@ async function createCryptoFile(secretWord) {
   // });
   // console.log(Buffer.concat([salt, iv, encrypted]).toString("base64"));
   (async () => {
-    fs.writeFileSync(
+    fs.writeFile(
       "db.txt",
       Buffer.concat([salt, iv, encrypted]).toString("base64"),
       () => {}
@@ -52,17 +73,25 @@ async function createCryptoFile(secretWord) {
   })();
 }
 async function decryptoFile(code, secretWord) {
+  if (code.length % 4 !== 0) return "error";
   encrypted = Buffer.from(code, "base64");
   const salt_len = (iv_len = 16);
   salt = encrypted.slice(0, salt_len);
-  iv = encrypted.slice(0 + salt_len, salt_len + iv_len);
+  iv = encrypted.slice(salt_len, salt_len + iv_len);
   key = crypto.pbkdf2Sync(secretWord, salt, 1, 256 / 8, "md4");
   decipher = crypto.createDecipheriv("aes-256-cfb", key, iv);
+  // let ver = crypto.verify('aes-256-cfb', encrypted, key, signature)
+  // console.log(ver)
+  // decipher.setAAD(encrypted.slice(salt_len + iv_len));
   decipher.write(encrypted.slice(salt_len + iv_len));
-  decipher.end();
+  let test = decipher.end();
+
   decrypted = decipher.read();
+
   try {
+    console.log(decrypted.toString());
     JSON.parse(decrypted);
+
     fs.writeFile(
       "passwords.json",
       decrypted.toString(),
@@ -70,12 +99,12 @@ async function decryptoFile(code, secretWord) {
       function () {}
     );
   } catch (error) {
+    console.log(error);
     return "error";
   }
 }
+
 async function cryptoFile(code, pass) {
-  console.log(code.toString());
-  console.log(pass);
   code = Buffer.from(code, "base64");
   const salt_len = (iv_len = 16);
   salt = code.slice(0, salt_len);
@@ -95,7 +124,10 @@ async function cryptoFile(code, pass) {
   let flag = 0;
   let promise = new Promise(async (resolve, reject) => {
     console.log(`${write}`);
-    fs.writeFile("db.txt", `${write}`, () => {});
+    fs.writeFile("db.txt", `${write}`, () => {
+      console.log(write);
+    });
+
     fs.unlink("passwords.json", (err) => {});
     flag = 1;
     resolve(flag);
@@ -114,7 +146,6 @@ app.get("/kill", async (req, res) => {
         resolve(flag);
       });
       let result = await promise;
-      console.log(result);
       setTimeout(() => {
         if (flag) exit(0);
       }, 2000);
@@ -159,6 +190,7 @@ app.post("/keyWord", jsonParser, (req, res) => {
   enterSecret = 1;
   fs.readFile("db.txt", async function (err, data) {
     let result = await decryptoFile(String(data), usersKey);
+    console.log(result);
     if (result == "error") {
       res.status(400).send(`error`);
       setTimeout(() => {
@@ -273,6 +305,7 @@ app.post("/change", jsonParser, (req, res) => {
   if (!req.body) return res.sendStatus(400);
   fs.readFile("passwords.json", function (err, data) {
     if (err) throw err;
+    console.log(req.body);
     let result = JSON.parse(data);
     for (let i in result.users) {
       if (req.body.login == result.users[i][`name`]) {
@@ -323,31 +356,63 @@ app.post("/login", jsonParser, (req, res) => {
   fs.readFile("passwords.json", function (err, data) {
     if (err) throw err;
     const result = JSON.parse(data);
+
     if (req.body.name !== "admin") {
       let login = 0;
       for (let i in result.users) {
         if (result.users[i][`name`] == req.body.name) {
           login = 1;
+
           if (result.users[i][`password`] == req.body.password) {
-            res.send(`<!DOCTYPE html>
-            <html lang="en">
-              <head>
-                <meta charset="UTF-8" />
-                <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                <link rel="stylesheet" href="/styles/user.css" />
-                <title>User panel</title>
-              </head>
-              <body>
-                <h1>User panel</h1>
-                <p id="login">${req.body.name}</p>
-                <div class="controlPanel">
-                  <button id="changeP" class="button">Сменить пароль</button>
-                  <button id="quit" class="button">Выйти</button>
-                </div>
-              </body>
-            </html>
-            `);
+            if (result.users[i][`password`] == "") {
+              res.status(400).send(`${wrong}`);
+            } else {
+              if (result.users[i][`passwordLimit`]) {
+                if (!checkPassword(result.users[i][`password`])) {
+                  res.status(400).send(`${wrong}`);
+                } else {
+                  res.send(`<!DOCTYPE html>
+                <html lang="en">
+                  <head>
+                    <meta charset="UTF-8" />
+                    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                    <link rel="stylesheet" href="/styles/user.css" />
+                    <title>User panel</title>
+                  </head>
+                  <body>
+                    <h1>User panel</h1>
+                    <p id="login">${req.body.name}</p>
+                    <div class="controlPanel">
+                      <button id="changeP" class="button">Сменить пароль</button>
+                      <button id="quit" class="button">Выйти</button>
+                    </div>
+                  </body>
+                </html>
+                `);
+                }
+              } else {
+                res.send(`<!DOCTYPE html>
+              <html lang="en">
+                <head>
+                  <meta charset="UTF-8" />
+                  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                  <link rel="stylesheet" href="/styles/user.css" />
+                  <title>User panel</title>
+                </head>
+                <body>
+                  <h1>User panel</h1>
+                  <p id="login">${req.body.name}</p>
+                  <div class="controlPanel">
+                    <button id="changeP" class="button">Сменить пароль</button>
+                    <button id="quit" class="button">Выйти</button>
+                  </div>
+                </body>
+              </html>
+              `);
+              }
+            }
             break;
           } else {
             res.send(`password`);
@@ -358,11 +423,14 @@ app.post("/login", jsonParser, (req, res) => {
         res.send(`login`);
       }
     } else {
-      if (req.body.password !== result.users[0][`password`]) {
-        res.send(`password`);
+      if (result.users[0][`password`] == "") {
+        res.status(400).send(`${wrong}`);
       } else {
-        res.send(
-          `<!DOCTYPE html>
+        if (req.body.password !== result.users[0][`password`]) {
+          res.send(`password`);
+        } else {
+          res.send(
+            `<!DOCTYPE html>
         <html lang="en">
           <head>
             <meta charset="UTF-8" />
@@ -385,7 +453,8 @@ app.post("/login", jsonParser, (req, res) => {
           </body>
         </html>
         `
-        );
+          );
+        }
       }
     }
   });

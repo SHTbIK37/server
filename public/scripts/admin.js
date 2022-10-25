@@ -19,7 +19,6 @@
   let length = await fetch("/getLength", { method: "GET" });
   length = await length.text();
   length = Number(length);
-  console.log(length);
 
   // =========================================================
   async function registration() {
@@ -149,11 +148,9 @@
   formAll.addEventListener("submit", async (e) => {
     e.preventDefault();
     let data = [];
-    console.log(length);
     for (let i = 0; i < length - 1; i++) {
       const elem = document.getElementById(`elem${i}`).children;
       let obj = {};
-      console.log(elem[0].innerHTML);
       obj[`name`] = elem[0].innerHTML;
       obj[`blocked`] = elem[1].value;
       obj[`passwordLimit`] = elem[2].value;
