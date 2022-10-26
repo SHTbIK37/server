@@ -89,7 +89,6 @@ async function decryptoFile(code, secretWord) {
   decrypted = decipher.read();
 
   try {
-    console.log(decrypted.toString());
     JSON.parse(decrypted);
 
     fs.writeFile(

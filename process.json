@@ -1,0 +1,15 @@
+{
+    "watch": [
+        "server",
+        "client",
+        "index.js"
+    ],
+    "ignore_watch": [
+        "node_modules",
+        "passwords.json",
+        "db.txt"
+    ],
+    "watch_options": {
+        "followSymlinks": false
+    }
+}
